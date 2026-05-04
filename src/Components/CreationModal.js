@@ -1,7 +1,7 @@
 import React from 'react';
 import './Modal.css';
 
-function CreationModal({ closeModal }) {
+function CreationModal({ closeModal, onConfirm}) {
     return (
         <div className='modalBackground'>
             <div className='modalContainer'>
@@ -22,6 +22,29 @@ function CreationModal({ closeModal }) {
                         <label>Amount:</label>
                         <input type="number" name="amount" />
                     </form>
+                </div>
+                <div className='footer'>
+                    <button onClick={closeModal}>Cancel</button>
+                    <button type="button" onClick={() => {
+                        const form = document.querySelector('form');
+                        const itemName = form.name.value.trim();
+                        const itemDescription = form.description.value.trim();
+                        const itemPrice = form.price.value.trim();
+                        const itemAmt = parseInt(form.amount.value, 10);
+
+                        if (!itemName || !itemPrice || Number.isNaN(itemAmt)) {
+                            alert('Please provide a valid name, price, and amount.');
+                            return;
+                        }
+
+                        const newItem = {
+                            item_name: itemName,
+                            item_description: itemDescription,
+                            item_price: itemPrice,
+                            item_amt: itemAmt
+                        };
+                        onConfirm(newItem);
+                    }}>Save</button>
                 </div>
             </div>
         </div>

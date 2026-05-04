@@ -1,7 +1,7 @@
 import React from 'react';
 import './Modal.css';
 
-function Modal({ item, closeModal, openDeleteModal, openEditModal }) {
+function EditModal({ item, closeModal }) {
   return (
     <div className='modalBackground'>
       <div className='modalContainer'>
@@ -24,22 +24,21 @@ function Modal({ item, closeModal, openDeleteModal, openEditModal }) {
             </thead>
             <tbody>
               <tr>
-                <td>{item.item_id}</td>
-                <td>{item.item_name}</td>
-                <td>{item.item_description}</td>
-                <td>{item.item_price}</td>
-                <td>{item.item_amt}</td>
+                <td><input type="text" name="name" defaultValue={item.item_name} /></td>
+                <td><input type="text" name="description" defaultValue={item.item_description} /></td>
+                <td><input type="number" name="price" step="0.01" defaultValue={item.item_price} /></td>
+                <td><input type="number" name="amount" defaultValue={item.item_amt} /></td>
               </tr>
             </tbody>
           </table>
         </div>
         <div className='footer'>
-          <button onClick={() => openEditModal(item)}>Edit</button>
-          <button onClick={() => openDeleteModal(item)}>Delete</button>
+          <button onClick={() => closeModal()}>Cancel</button>
+          <button onClick={() => closeModal()}>Save Changes</button>
         </div>
       </div>
     </div>
   );
 }
 
-export default Modal;
+export default EditModal;
