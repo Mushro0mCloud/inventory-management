@@ -103,6 +103,11 @@ function App() {
         body: JSON.stringify(newItem)
       });
 
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create item');
+      }
+
       setItems(prevItems => [...prevItems, data]);
       setFetchError(null);
       closeCreationModal();
@@ -120,6 +125,11 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedItem)
       });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update item');
+      }
       
       setItems(prevItems => prevItems.map(i => i.item_id === updatedItem.item_id ? data : i));
       setFetchError(null);
