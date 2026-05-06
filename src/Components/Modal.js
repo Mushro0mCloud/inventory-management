@@ -1,6 +1,7 @@
 import React from 'react';
 import './Modal.css';
 
+//very normal modal. this is like John Modal himself. opens up like two other modals, so we need to call those as variables.
 function Modal({ item, closeModal, openDeleteModal, openEditModal }) {
   return (
     <div className='modalBackground'>

@@ -1,6 +1,7 @@
 import React from 'react';
 import './Modal.css';
 
+//this modal handles deletion of items. it needs three variables, item, closeModal, and onConfirm (backend bullshit).
 function DeleteModal({ item, closeModal, onConfirm }) {
   return (
     <div className='modalBackground'>

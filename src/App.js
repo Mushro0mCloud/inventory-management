@@ -1,4 +1,4 @@
-import logo from './logo.svg';
+import logo from './logo.svg'; //we are keeping the react logo. i had gotten attached.
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import Modal from './Components/Modal.js';
@@ -6,6 +6,7 @@ import DeleteModal from './Components/DeleteModal.js';
 import CreationModal from './Components/CreationModal.js';
 import EditModal from './Components/EditModal.js';
 
+//yes, there genuinely are this many constants we need.
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -18,6 +19,8 @@ function App() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+
+  //a billion modals means a million functions to handle them all.
   const openModal = (item) => {
     setSelectedItem(item);
     setIsModalOpen(true);
@@ -67,6 +70,10 @@ function App() {
     setIsEditModalOpen(false);
   }
 
+
+//now we move on to the functions that confirm the CRUD.
+
+  //confirms the deletion of an item.
   const confirmDelete = async () => {
     if (!selectedItem) return;
 
@@ -87,6 +94,7 @@ function App() {
     }
   };
 
+//confirms the creation of a new item.
   const confirmCreation = async (newItem) => {
     try {
       const response = await fetch(`${apiBase}/items`, {
@@ -94,11 +102,6 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newItem)
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create item');
-      }
 
       setItems(prevItems => [...prevItems, data]);
       setFetchError(null);
@@ -109,6 +112,7 @@ function App() {
     }
   }
 
+  // confirms any edits made to existing items.
   const confirmEdit = async (updatedItem) => {
     try {      
       const response = await fetch(`${apiBase}/items/${updatedItem.item_id}`, {
@@ -116,11 +120,6 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedItem)
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update item');
-      }
       
       setItems(prevItems => prevItems.map(i => i.item_id === updatedItem.item_id ? data : i));
       setFetchError(null);
@@ -142,22 +141,12 @@ function App() {
     fetch(`${apiBase}/items`)
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data)) {
-          setItems(data);
-          setFetchError(null);
-        } else {
-          console.error('Unexpected items payload:', data);
-          setItems([]);
-          setFetchError('Could not load item list from server.');
-        }
-      })
-      .catch(error => {
-        console.error('Error fetching items:', error);
-        setItems([]);
-        setFetchError('Error fetching items from API.');
+      setItems(data);
+      setFetchError(null);
       });
   }, []);
 
+//paginating it goes here.
   const itemArray = Array.isArray(items) ? items : [];
   const totalPages = Math.max(1, Math.ceil(itemArray.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -176,6 +165,7 @@ function App() {
     }
   };
 
+//i kept two things here: the react logo and an endpoint i set up that grabs /time from the backend. I needed that endpoint to just prove that the backend was working at all.
   return (
     <div className="App">
       <header className="App-header">

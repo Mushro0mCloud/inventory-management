@@ -1,6 +1,7 @@
 import React from 'react';
 import './Modal.css';
 
+//this is basically the regular modal but with input fields. it needs three variables, item, closeModal, and onSave (backend bullshit).
 function EditModal({ item, closeModal, onSave }) {
   const [name, setName] = React.useState(item.item_name);
   const [description, setDescription] = React.useState(item.item_description);

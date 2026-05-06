@@ -14,11 +14,11 @@ app = Flask(__name__)
 # Enable CORS for all routes
 CORS(app)
 
-# Database configuration
+# this should be postgres configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# MongoDB logging configuration
+# mongodb configuration stuff
 MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/')
 MONGO_DB_NAME = os.getenv('MONGO_DB_NAME', 'inventory_management')
 MONGO_COLLECTION_NAME = os.getenv('MONGO_COLLECTION_NAME', 'api_logs')
@@ -29,7 +29,7 @@ mongo_client.admin.command('ping')
 api_log_collection = mongo_client[MONGO_DB_NAME][MONGO_COLLECTION_NAME]
 app.logger.info('Connected to MongoDB at %s, database: %s, collection: %s', MONGO_URI, MONGO_DB_NAME, MONGO_COLLECTION_NAME)
 
-# determines action type based on HTTP method and endpoint path
+# determines action type based on HTTP and endpoint
 def get_request_action(method, path):
     if method == 'POST' and path == '/items':
         return 'ADD_INVENTORY'
@@ -39,7 +39,7 @@ def get_request_action(method, path):
         return 'EDIT_INVENTORY'
     return None
 
-# Logs API requests to MongoDB before processing them
+# this runs before processing API requests and logs them into the mongodb collection.
 @app.before_request
 def log_api_request():
     action = get_request_action(request.method, request.path)
@@ -56,10 +56,11 @@ def log_api_request():
 
     api_log_collection.insert_one(log_doc)
 
+# this is just initialization, we could've put this on the top of the file but whatever.
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-# Model for inventory_items table
+# model for inventory_items table. grabs data from postgres
 class InventoryItem(db.Model):
     __tablename__ = 'inventory_items'
     
@@ -69,6 +70,7 @@ class InventoryItem(db.Model):
     item_price = db.Column(db.String(50))
     item_amt = db.Column(db.Integer, nullable=False)
 
+# shows the items.
 @app.route('/items')
 def get_items():
         items = InventoryItem.query.all()
@@ -80,7 +82,7 @@ def get_items():
             'item_amt': item.item_amt
         } for item in items])
 
-
+# creates a new item. unfortunately, despite the fact that i tried my best to find the smallest available ID, it still appears at the very end of the database. i hope i'm stupid aand there actually is a way to fix this.
 @app.route('/items', methods=['POST'])
 def create_item():
         data = request.get_json()
@@ -118,7 +120,7 @@ def create_item():
             'item_amt': item.item_amt
         }), 201
 
-
+# this one completely deletes whatever item we have selected.
 @app.route('/items/<int:item_id>', methods=['DELETE'])
 def delete_item(item_id):
         item = InventoryItem.query.get(item_id)
@@ -127,7 +129,7 @@ def delete_item(item_id):
         db.session.commit()
         return jsonify({'success': True}), 200
 
-
+# this one edits the data of an existing item.
 @app.route('/items/<int:item_id>', methods=['PUT'])
 def update_item(item_id):
         data = request.get_json()
@@ -150,6 +152,7 @@ def update_item(item_id):
         }), 200
 
 
+#i left this here as a remnant just to test if the backend was working haha
 @app.route('/time')
 def get_current_time():
     return jsonify({'time': time.time()})

@@ -1,6 +1,7 @@
 import React from 'react';
 import './Modal.css';
 
+//this model creates new items out of nowhere. unfortunately, when new items do appear, they appear at the very very end of the database, so whoops. if there is a way to make them appear sorted by ID, i am entirely unaware.
 function CreationModal({ closeModal, onConfirm}) {
     return (
         <div className='modalBackground'>
