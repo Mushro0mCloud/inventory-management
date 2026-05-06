@@ -1,8 +1,11 @@
+import os
 import time
+from datetime import datetime
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
+from pymongo import MongoClient
 from sqlalchemy import text
 from database import DB_URL
 
@@ -14,6 +17,44 @@ CORS(app)
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# MongoDB logging configuration
+MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/')
+MONGO_DB_NAME = os.getenv('MONGO_DB_NAME', 'inventory_management')
+MONGO_COLLECTION_NAME = os.getenv('MONGO_COLLECTION_NAME', 'api_logs')
+
+# Initialize MongoDB client for logging
+mongo_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+mongo_client.admin.command('ping')
+api_log_collection = mongo_client[MONGO_DB_NAME][MONGO_COLLECTION_NAME]
+app.logger.info('Connected to MongoDB at %s, database: %s, collection: %s', MONGO_URI, MONGO_DB_NAME, MONGO_COLLECTION_NAME)
+
+# determines action type based on HTTP method and endpoint path
+def get_request_action(method, path):
+    if method == 'POST' and path == '/items':
+        return 'ADD_INVENTORY'
+    if method == 'DELETE' and path.startswith('/items/'):
+        return 'DELETE_INVENTORY'
+    if method == 'PUT' and path.startswith('/items/'):
+        return 'EDIT_INVENTORY'
+    return None
+
+# Logs API requests to MongoDB before processing them
+@app.before_request
+def log_api_request():
+    action = get_request_action(request.method, request.path)
+    if action is None:
+        return
+
+    log_doc = {
+        'timestamp': datetime.utcnow().isoformat() + 'Z',
+        'method': request.method,
+        'endpoint': request.path,
+        'action': action,
+#        'user_agent': request.headers.get('User-Agent', '')
+    }
+
+    api_log_collection.insert_one(log_doc)
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -30,7 +71,6 @@ class InventoryItem(db.Model):
 
 @app.route('/items')
 def get_items():
-    try:
         items = InventoryItem.query.all()
         return jsonify([{
             'item_id': item.item_id,
@@ -39,24 +79,16 @@ def get_items():
             'item_price': str(item.item_price),
             'item_amt': item.item_amt
         } for item in items])
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/items', methods=['POST'])
 def create_item():
-    try:
         data = request.get_json()
-        if not data:
-            return jsonify({'error': 'Invalid JSON payload'}), 400
 
         item_name = data.get('item_name')
         item_description = data.get('item_description', '')
         item_price = data.get('item_price')
         item_amt = data.get('item_amt')
-
-        if not item_name or item_price is None or item_amt is None:
-            return jsonify({'error': 'item_name, item_price, and item_amt are required'}), 400
 
         next_id_query = text(
             "SELECT MIN(seq_id) AS next_id "
@@ -85,24 +117,37 @@ def create_item():
             'item_price': item.item_price,
             'item_amt': item.item_amt
         }), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/items/<int:item_id>', methods=['DELETE'])
 def delete_item(item_id):
-    try:
         item = InventoryItem.query.get(item_id)
-        if not item:
-            return jsonify({'error': 'Item not found'}), 404
 
         db.session.delete(item)
         db.session.commit()
         return jsonify({'success': True}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/items/<int:item_id>', methods=['PUT'])
+def update_item(item_id):
+        data = request.get_json()
+
+        item = InventoryItem.query.get(item_id)
+
+        item.item_name = data.get('item_name', item.item_name)
+        item.item_description = data.get('item_description', item.item_description)
+        item.item_price = str(data.get('item_price', item.item_price))
+        item.item_amt = int(data.get('item_amt', item.item_amt))
+
+        db.session.commit()
+
+        return jsonify({
+            'item_id': item.item_id,
+            'item_name': item.item_name,
+            'item_description': item.item_description,
+            'item_price': item.item_price,
+            'item_amt': item.item_amt
+        }), 200
 
 
 @app.route('/time')
@@ -112,5 +157,5 @@ def get_current_time():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)
 

@@ -1,0 +1,57 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: inventory_backend
+    restart: always
+    depends_on:
+      - db
+      - mongodb
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/postgres
+      - MONGO_URI=mongodb://root:example@mongodb:27017/?authSource=admin
+      - MONGO_DB_NAME=inventory_management
+      - MONGO_COLLECTION_NAME=api_logs
+    ports:
+      - "5000:5000"
+  frontend:
+    build:
+      context: .
+      dockerfile: dockerfile
+    container_name: inventory_frontend
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_API_URL=http://backend:5000
+      - HOST=0.0.0.0
+    ports:
+      - "3000:3000"
+  db:
+    image: postgres:latest
+    container_name: JJpostgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  logging:
+    image: mongo:latest
+    container_name: mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  postgres_data:
+  mongo_data:

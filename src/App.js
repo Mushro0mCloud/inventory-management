@@ -12,6 +12,7 @@ function App() {
   const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const apiBase = process.env.REACT_APP_API_URL || '';
   const [items, setItems] = useState([]);
   const [fetchError, setFetchError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -70,7 +71,7 @@ function App() {
     if (!selectedItem) return;
 
     try {
-      const response = await fetch(`/items/${selectedItem.item_id}`, {
+      const response = await fetch(`${apiBase}/items/${selectedItem.item_id}`, {
         method: 'DELETE'
       });
       if (!response.ok) {
@@ -88,7 +89,7 @@ function App() {
 
   const confirmCreation = async (newItem) => {
     try {
-      const response = await fetch('/items', {
+      const response = await fetch(`${apiBase}/items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newItem)
@@ -108,15 +109,37 @@ function App() {
     }
   }
 
+  const confirmEdit = async (updatedItem) => {
+    try {      
+      const response = await fetch(`${apiBase}/items/${updatedItem.item_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedItem)
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update item');
+      }
+      
+      setItems(prevItems => prevItems.map(i => i.item_id === updatedItem.item_id ? data : i));
+      setFetchError(null);
+      closeEditModal();
+    } catch (error) {
+      console.error('Error updating item:', error);
+      setFetchError('Unable to update item.');
+    }
+  }
+
   const [currentTime, setCurrentTime] = useState(null);
   useEffect(() => {
-    fetch('/time').then(res => res.json()).then(data => {
+    fetch(`${apiBase}/time`).then(res => res.json()).then(data => {
       setCurrentTime(data.time);
     });
-  }, []);
+  }, [apiBase]);
 
   useEffect(() => {
-    fetch('/items')
+    fetch(`${apiBase}/items`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -189,12 +212,22 @@ function App() {
           <DeleteModal item={selectedItem} closeModal={closeDeleteModal} onConfirm={confirmDelete} />
         )}
         {isEditModalOpen && selectedItem && (
-          <EditModal item={selectedItem} closeModal={closeEditModal} />
+          <EditModal
+            item={selectedItem}
+            closeModal={closeEditModal}
+            onSave={confirmEdit}
+          />
         )}
         <div>
           <button onClick={prevPage} disabled={currentPage === 1}>Previous</button>
           <span> Page {currentPage} of {totalPages} </span>
           <button onClick={nextPage} disabled={currentPage === totalPages}>Next</button>
+          <input type="number" min="1" max={totalPages} value={currentPage} onChange={e => {
+            const page = parseInt(e.target.value, 10);
+            if (!isNaN(page) && page >= 1 && page <= totalPages) {
+              setCurrentPage(page);
+            }
+          }} />
         </div>
         <p>The current time is {currentTime}</p>
       </header>
