@@ -5,6 +5,7 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY api/ ./
+RUN chmod +x ./docker-entrypoint.sh
 EXPOSE 5000
 
-CMD ["python", "app.py"]
+ENTRYPOINT ["./docker-entrypoint.sh"]

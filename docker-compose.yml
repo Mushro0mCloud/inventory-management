@@ -3,11 +3,10 @@ services:
     build:
       context: .
       dockerfile: api/Dockerfile
-    container_name: inventory_backend
     restart: always
     depends_on:
       - db
-      - logging
+      - mongodb
     environment:
       - DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/postgres
       - MONGO_URI=mongodb://root:example@mongodb:27017/?authSource=admin
@@ -19,18 +18,16 @@ services:
     build:
       context: .
       dockerfile: dockerfile
-    container_name: inventory_frontend
     restart: always
     depends_on:
       - backend
     environment:
-      - REACT_APP_API_URL=http://backend:5000
+      - REACT_APP_API_URL=http://localhost:5000
       - HOST=0.0.0.0
     ports:
       - "3000:3000"
   db:
     image: postgres:latest
-    container_name: JJpostgres
     restart: always
     environment:
       POSTGRES_USER: postgres
@@ -40,9 +37,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-  logging:
+  mongodb:
     image: mongo:latest
-    container_name: mongodb
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: root

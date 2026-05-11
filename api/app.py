@@ -2,12 +2,10 @@ import os
 import time
 from datetime import datetime
 from flask import Flask, jsonify, request
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from flask_cors import CORS
-from pymongo import MongoClient
 from sqlalchemy import text
 from database import DB_URL
+from schema import db, init_db, create_tables, init_mongo, InventoryItem
+from flask_cors import CORS
 
 app = Flask(__name__)
 
@@ -19,15 +17,13 @@ app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # mongodb configuration stuff
-MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/')
-MONGO_DB_NAME = os.getenv('MONGO_DB_NAME', 'inventory_management')
-MONGO_COLLECTION_NAME = os.getenv('MONGO_COLLECTION_NAME', 'api_logs')
+app.config['MONGO_URI'] = os.getenv('MONGO_URI', 'mongodb://localhost:27017/')
+app.config['MONGO_DB_NAME'] = os.getenv('MONGO_DB_NAME', 'inventory_management')
+app.config['MONGO_COLLECTION_NAME'] = os.getenv('MONGO_COLLECTION_NAME', 'api_logs')
 
-# Initialize MongoDB client for logging
-mongo_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
-mongo_client.admin.command('ping')
-api_log_collection = mongo_client[MONGO_DB_NAME][MONGO_COLLECTION_NAME]
-app.logger.info('Connected to MongoDB at %s, database: %s, collection: %s', MONGO_URI, MONGO_DB_NAME, MONGO_COLLECTION_NAME)
+# Initialize database bindings
+init_db(app)
+api_log_collection = init_mongo(app)
 
 # determines action type based on HTTP and endpoint
 def get_request_action(method, path):
@@ -55,20 +51,6 @@ def log_api_request():
     }
 
     api_log_collection.insert_one(log_doc)
-
-# this is just initialization, we could've put this on the top of the file but whatever.
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
-
-# model for inventory_items table. grabs data from postgres
-class InventoryItem(db.Model):
-    __tablename__ = 'inventory_items'
-    
-    item_id = db.Column(db.Integer, primary_key=True)
-    item_name = db.Column(db.String(50), nullable=False)
-    item_description = db.Column(db.String(250))
-    item_price = db.Column(db.String(50))
-    item_amt = db.Column(db.Integer, nullable=False)
 
 # shows the items.
 @app.route('/items')
@@ -160,5 +142,6 @@ def get_current_time():
 
 
 if __name__ == '__main__':
+    create_tables(app)
     app.run(host='0.0.0.0', debug=True)
 
