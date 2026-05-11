@@ -2,19 +2,19 @@
 set -e
 
 wait_for_port() {
-  python - <<'PY'
-import socket, time, sys
-host, port = sys.argv[1], int(sys.argv[2])
+  host=$1
+  port=$2
+  python -c "
+import socket, time
 for _ in range(60):
     try:
-        with socket.create_connection((host, port), timeout=1):
-            sys.exit(0)
+        with socket.create_connection(('$host', int($port)), timeout=1):
+            exit(0)
     except OSError:
         time.sleep(1)
-print(f"{host}:{port}" took too long, file=sys.stderr)
-sys.exit(1)
-PY
-"$1" "$2"
+print(f'$host:$port took too long', file=__import__('sys').stderr)
+exit(1)
+"
 }
 
 echo "postgres loading"
@@ -25,7 +25,8 @@ wait_for_port mongodb 27017
 
 echo "making schema"
 python - <<'PY'
-from app import create_tables, app
+from schema import create_tables
+from app import app
 create_tables(app)
 PY
 

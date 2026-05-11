@@ -148,6 +148,7 @@ function App() {
   }, [apiBase]);
 
   useEffect(() => {
+    const apiBase = process.env.REACT_APP_API_URL || '';
     fetch(`${apiBase}/items`)
       .then(res => res.json())
       .then(data => {
