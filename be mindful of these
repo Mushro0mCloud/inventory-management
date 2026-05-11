@@ -1,2 +1,0 @@
-needed:
-flask, sqlalchemy, flask_sqlalchemy, flask_migrate, reactjs, postgres, psycopg2, flask-cors
