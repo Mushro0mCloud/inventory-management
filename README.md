@@ -1,23 +1,33 @@
 # Introduction: Thanks for pulling.
-Welcome to the Inventory management system. After pulling from the repository, you can launch this application by opening two terminals.
+Welcome to the Inventory Management System. After pulling from the repository, you must navigate to the repository root.
 
-Firstly, run this command in the repository root. Ensure Docker is running.
+Run this command in the repository root. Ensure the Docker Engine is running.
 ```bash
 docker-compose up
 ```
-
-Assuming, of course, that no issues arise with mongoDB and PostgreSQL, this should work. This shouldn't be an issue on a new file: the containers created are called "mongodb" and "JJpostgres".
-
-## Terminal 1
+This should initialize four containers, that should be named automatically. Find their names by running:
 ```bash
-cd api && flask run
+docker ps
 ```
-Run to access the python virtual environment and launch the flask backend on port 5000 in dev mode (due to the way it has been configured).
-
-## Terminal 2
+## Checking the databases
+To check the **PostgreSQL** database, enter the postgres command line using:
 ```bash
-yarn start
+docker exec -it inventory-management-db-1 psql -U postgres
 ```
-This will initiate yarn, which should automatically open the application on the default browser. The application's frontend will be on port 3000.
+```bash
+\dt
+SELECT * FROM inventory_items;
+\q
+```
+Where `inventory-management-db-1` is the name of your container as shown when running `docker ps`.
 
-The application then communicates to PostgreSQL on port 5432 (default). It then tracks logs to mongoDB on port 27017 (default).
+To check the **MongoDB** database, enter the mongodb command line using:
+```bash
+docker exec -it inventory-management-mongodb-1 mongosh -u "root" -p "example"
+```
+```bash
+use api_logs
+db.api_logs.find().pretty()
+exit
+```
+where `inventory-management-mongodb-1` is the name of your container as shown when running `docker ps`.
