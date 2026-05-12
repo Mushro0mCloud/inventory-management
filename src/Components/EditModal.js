@@ -31,7 +31,6 @@ function EditModal({ item, closeModal, onSave }) {
           <table>
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Name</th>
                 <th>Description</th>
                 <th>Price</th>

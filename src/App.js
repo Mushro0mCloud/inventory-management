@@ -141,6 +141,26 @@ function App() {
   }
 
   const [currentTime, setCurrentTime] = useState(null);
+
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        const response = await fetch(`${apiBase}/items`);
+        if (!response.ok) {
+          throw new Error('items won\'t load');
+        }
+        const data = await response.json();
+        setItems(data);
+        setFetchError(null);
+      } catch (error) {
+        console.error('items won\'t load:', error);
+        setFetchError('backend won\'t give items');
+      }
+    };
+
+    fetchItems();
+  }, [apiBase]);
+
   useEffect(() => {
     fetch(`${apiBase}/time`).then(res => res.json()).then(data => {
       setCurrentTime(data.time);

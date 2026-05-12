@@ -27,7 +27,7 @@ services:
     ports:
       - "3000:3000"
   db:
-    image: postgres:latest
+    image: postgres:15.0
     restart: always
     environment:
       POSTGRES_USER: postgres

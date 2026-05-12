@@ -2,9 +2,10 @@ import os
 import time
 from datetime import datetime
 from flask import Flask, jsonify, request
-from sqlalchemy import text
+from sqlalchemy import text, create_engine
 from database import DB_URL
 from schema import db, init_db, create_tables, init_mongo, InventoryItem
+from models import InventoryItems, Base
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -24,6 +25,11 @@ app.config['MONGO_COLLECTION_NAME'] = os.getenv('MONGO_COLLECTION_NAME', 'api_lo
 # Initialize database bindings
 init_db(app)
 api_log_collection = init_mongo(app)
+
+# create table
+engine = create_engine(DB_URL)
+Base.metadata.create_all(engine)
+
 
 # determines action type based on HTTP and endpoint
 def get_request_action(method, path):
